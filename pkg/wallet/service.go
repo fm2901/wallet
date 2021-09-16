@@ -109,24 +109,16 @@ func (s *Service) FindAccountByID(accountID int64) (*types.Account, error) {
 }
 
 func (s *Service) FindPaymentByID(paymentID string) (*types.Payment, error) {
-	var payment *types.Payment
-	for _, pay := range s.payments {
-		if pay.ID == paymentID {
-			payment = pay
-			break
+	for _, payment := range s.payments {
+		if payment.ID == paymentID {
+			return payment, nil
 		}
 	}
-
-	if payment == nil {
-		return nil, ErrPaymentNotFound
-	}
-
-	return payment, nil
+	return nil, ErrPaymentNotFound
 }
 
 func (s *Service) Reject(paymentID string) error {
 	payment, err := s.FindPaymentByID(paymentID)
-
 	if err != nil {
 		return err
 	}
@@ -135,7 +127,12 @@ func (s *Service) Reject(paymentID string) error {
 		return ErrPaymentExecuted
 	}
 
+	account, err := s.FindAccountByID(payment.AccountID)
+	if err != nil {
+		return err
+	}
+
 	payment.Status = types.PaymentStatusFail
-	s.Deposit(payment.AccountID, payment.Amount)
+	account.Balance += payment.Amount
 	return nil
 }
