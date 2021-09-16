@@ -96,6 +96,43 @@ func TestService_FindAccountByID_notFound(t *testing.T) {
 	}
 }
 
+func TestService_Reject_success(t *testing.T) {
+	svc := Service{}
+	
+	account, err := svc.RegisterAccount("+992000000001")
+	if err != nil {
+		t.Error(err)
+	}
+	
+	err = svc.Deposit(account.ID, 100)
+	if err != nil {
+		t.Error(err)
+	}
+
+	payment, err := svc.Pay(account.ID, 50, "auto")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = svc.Reject(payment.ID)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if payment.Status != types.PaymentStatusFail {
+		t.Errorf("invalid result, expected: %v, actual: %v", types.PaymentStatusFail, payment.Status)
+	}
+}
+
+func TestService_Reject_notFound(t *testing.T) {
+	svc := Service{}
+	
+	err := svc.Reject("123")
+	if err != ErrPaymentNotFound {
+		t.Errorf("invalid result, expected: %v, actual: %v", ErrPaymentNotFound, err)
+	}
+}
+
 /*
 payments := []types.Payment{
 		{ID: 1, Category: "auto", Amount: 1_000},
