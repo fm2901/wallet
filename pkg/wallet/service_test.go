@@ -3,6 +3,7 @@ package wallet
 import (
 	"testing"
 	"github.com/fm2901/wallet/pkg/types"
+	"reflect"
 )
 
 
@@ -64,6 +65,37 @@ func TestService_Pay_success(t *testing.T) {
 		return
 	}
 }
+
+func TestService_FindAccountByID_success(t *testing.T) {
+	svc := Service{}
+	account, err := svc.RegisterAccount("+992000000001")
+
+	if err != nil {
+		t.Error(err)
+	}
+	
+	result, err := svc.FindAccountByID(account.ID)
+
+	if !reflect.DeepEqual(account, result) {
+		t.Errorf("invalid result, expected: %v, actual: %v", account, result)
+	}
+}
+
+func TestService_FindAccountByID_notFound(t *testing.T) {
+	svc := Service{}
+	_, err := svc.RegisterAccount("+992000000001")
+
+	if err != nil {
+		t.Error(err)
+	}
+	
+	result, err := svc.FindAccountByID(0)
+
+	if err != ErrAccountNotFound {
+		t.Errorf("invalid result, expected: %v, actual: %v", ErrAccountNotFound, result)
+	}
+}
+
 /*
 payments := []types.Payment{
 		{ID: 1, Category: "auto", Amount: 1_000},
