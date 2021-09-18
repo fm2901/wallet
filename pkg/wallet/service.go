@@ -136,8 +136,6 @@ func (s *Service) FindAccountPosByID(accountID int64) (acc *types.Account, posit
 	return account, position, nil
 }
 
-
-
 func (s *Service) FindPaymentByID(paymentID string) (*types.Payment, error) {
 	for _, payment := range s.payments {
 		if payment.ID == paymentID {
@@ -462,38 +460,14 @@ func (s *Service) Export(dir string) error {
 }
 
 func (s *Service) Import(dir string) error {
-	file, err := os.Open(dir + "/accounts.dump")
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if cerr := file.Close(); cerr != nil {
-			if err == nil {
-				err = cerr
-			}
+	_, err := os.Stat(dir + "/accounts.dump")
+	if err == nil {
+		content, err := os.ReadFile(dir + "/accounts.dump")
+		if err != nil {
+			return err
 		}
-	}()
-
-	if file != nil {
-		content := make([]byte, 0)
-		buf := make([]byte, 4)
-		for {
-			read, err := file.Read(buf)
-			if err == io.EOF {
-				content = append(content, buf[:read]...)
-				break
-			}
-
-			if err != nil {
-				return err
-			}
-			content = append(content, buf[:read]...)
-		}
-
-		data := string(content)
-		rows := strings.Split(data, RowDelimiter)
-		s.nextAccountID = s.accounts[0].ID
+		rows := strings.Split(string(content), RowDelimiter)
+		s.nextAccountID = 0
 		for _, row := range rows {
 			cols := strings.Split(row, ColDelimiter)
 			id, _ := strconv.ParseInt(cols[0], 10, 64)
@@ -501,7 +475,9 @@ func (s *Service) Import(dir string) error {
 			balance, _ := strconv.ParseInt(cols[2], 10, 64)
 			oldAccount, position, err := s.FindAccountPosByID(id)
 			if err != nil {
-				return err
+				if err != ErrAccountNotFound {
+					return err
+				}
 			}
 			if s.nextAccountID < id {
 				s.nextAccountID = id
@@ -519,37 +495,13 @@ func (s *Service) Import(dir string) error {
 		}
 	}
 
-	file, err = os.Open(dir + "/payments.dump")
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if cerr := file.Close(); cerr != nil {
-			if err == nil {
-				err = cerr
-			}
+	_, err = os.Stat(dir + "/payments.dump")
+	if err == nil {
+		content, err := os.ReadFile(dir + "/payments.dump")
+		if err != nil {
+			return err
 		}
-	}()
-
-	if file != nil {
-		content := make([]byte, 0)
-		buf := make([]byte, 4)
-		for {
-			read, err := file.Read(buf)
-			if err == io.EOF {
-				content = append(content, buf[:read]...)
-				break
-			}
-
-			if err != nil {
-				return err
-			}
-			content = append(content, buf[:read]...)
-		}
-
-		data := string(content)
-		rows := strings.Split(data, RowDelimiter)
+		rows := strings.Split(string(content), RowDelimiter)
 		for _, row := range rows {
 			cols := strings.Split(row, ColDelimiter)
 			id := string(cols[0])
@@ -559,7 +511,9 @@ func (s *Service) Import(dir string) error {
 			status := types.PaymentStatus(cols[4])
 			oldPayment, position, err := s.FindPaymentPosByID(id)
 			if err != nil {
-				return err
+				if err != ErrPaymentNotFound {
+					return err
+				}
 			}
 			curPayment := &types.Payment{
 				ID:        id,
@@ -576,38 +530,13 @@ func (s *Service) Import(dir string) error {
 		}
 	}
 
-
-	file, err = os.Open(dir + "/favorites.dump")
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if cerr := file.Close(); cerr != nil {
-			if err == nil {
-				err = cerr
-			}
+	_, err = os.Stat(dir + "/favorites.dump")
+	if err == nil {
+		content, err := os.ReadFile(dir + "/favorites.dump")
+		if err != nil {
+			return err
 		}
-	}()
-
-	if file != nil {
-		content := make([]byte, 0)
-		buf := make([]byte, 4)
-		for {
-			read, err := file.Read(buf)
-			if err == io.EOF {
-				content = append(content, buf[:read]...)
-				break
-			}
-
-			if err != nil {
-				return err
-			}
-			content = append(content, buf[:read]...)
-		}
-
-		data := string(content)
-		rows := strings.Split(data, RowDelimiter)
+		rows := strings.Split(string(content), RowDelimiter)
 		for _, row := range rows {
 			cols := strings.Split(row, ColDelimiter)
 			id := string(cols[0])
@@ -615,15 +544,17 @@ func (s *Service) Import(dir string) error {
 			name := cols[2]
 			amount, _ := strconv.ParseInt(cols[3], 10, 64)
 			category := types.PaymentCategory(cols[4])
-			
+
 			oldFavorite, position, err := s.FindFavoritePosByID(id)
 			if err != nil {
-				return err
+				if err != ErrFavoriteNotFound {
+					return err
+				}
 			}
 			curFavorite := &types.Favorite{
 				ID:        id,
 				AccountID: accountID,
-				Name: name,
+				Name:      name,
 				Amount:    types.Money(amount),
 				Category:  category,
 			}
@@ -634,6 +565,5 @@ func (s *Service) Import(dir string) error {
 			}
 		}
 	}
-
 	return nil
 }
