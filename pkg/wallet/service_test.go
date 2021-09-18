@@ -82,7 +82,7 @@ func TestService_FindPaymentByID_success(t *testing.T) {
 	}
 
 	payment := payments[0]
-	got, err := s.FindPaymentByID(payment.ID)
+	got, _, err := s.FindPaymentByID(payment.ID)
 	if err != nil {
 		t.Errorf("FindPaymentByID(): error = %v", err)
 		return
@@ -102,7 +102,7 @@ func TestService_FindPaymentByID_fail(t *testing.T) {
 		return
 	}
 
-	_, err = s.FindPaymentByID(uuid.New().String())
+	_, _, err = s.FindPaymentByID(uuid.New().String())
 	if err == nil {
 		t.Errorf("FindPaymentByID(): error = %v", err)
 		return
@@ -116,7 +116,7 @@ func TestService_FindPaymentByID_fail(t *testing.T) {
 
 func TestFindAccountByID_empty(t *testing.T) {
 	svc := &wallet.Service{}
-	result, err := svc.FindAccountByID(1)
+	result, _, err := svc.FindAccountByID(1)
 	if err != wallet.ErrAccountNotFound || result != nil {
 		t.Error("Тест empty не прошел")
 	}
@@ -125,7 +125,7 @@ func TestFindAccountByID_empty(t *testing.T) {
 func TestFindAccountByID_notEmpty(t *testing.T) {
 	svc := &wallet.Service{}
 	result, err := svc.RegisterAccount("+992000000001")
-	result, err = svc.FindAccountByID(3)
+	result, _, err = svc.FindAccountByID(3)
 	if err != wallet.ErrAccountNotFound || result != nil {
 		t.Error("Тест notEmpty не прошел")
 	}
@@ -155,7 +155,7 @@ func TestService_Reject_success(t *testing.T) {
 		return
 	}
 	
-	savedPayment, err := s.FindPaymentByID(payment.ID)
+	savedPayment, _, err := s.FindPaymentByID(payment.ID)
 	if err != nil {
 		t.Errorf("Reject(): can't find payment by id, error = %v", err)
 		return
@@ -165,7 +165,7 @@ func TestService_Reject_success(t *testing.T) {
 		return
 	}
 
-	savedAccount, err := s.FindAccountByID(payment.AccountID)
+	savedAccount, _, err := s.FindAccountByID(payment.AccountID)
 	if err != nil {
 		t.Errorf("Reject(): can't find account by id, error = %v", err)
 		return

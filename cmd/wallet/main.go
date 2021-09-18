@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/fm2901/wallet/pkg/wallet"
 )
 
@@ -24,9 +23,12 @@ func main() {
 		}
 		return
 	}
-	fmt.Println(account.Balance)
-	svc.Pay(account.ID, 50, "auto")
-	fmt.Println(account.Balance)
+	payment, err := svc.Pay(account.ID, 50, "auto")
+	svc.FavoritePayment(payment.ID, "myFavorite")
 
-	svc.ExportToFile("C:/homework/dz16/wallet/data/accounts.dump")
+	svc.Export("C:/homework/dz17/wallet/data")
+	svc.Import("C:/homework/dz17/wallet/data")
+	//svc.ImportFromFile("C:/homework/dz16/wallet/data/accounts.dump")
+
+	//	wallet.CopyFile("C:/homework/dz17/wallet/data/accounts.dump", "C:/homework/dz17/wallet/data/accounts_copy.dump")
 }
