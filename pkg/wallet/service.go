@@ -103,7 +103,23 @@ func (s *Service) Pay(accountID int64, amount types.Money, category types.Paymen
 	return payment, nil
 }
 
-func (s *Service) FindAccountByID(accountID int64) (acc *types.Account, position int, err error) {
+func (s *Service) FindAccountByID(accountID int64) (*types.Account, error) {
+	var account *types.Account
+	for _, acc := range s.accounts {
+		if acc.ID == accountID {
+			account = acc
+			break
+		}
+	}
+
+	if account == nil {
+		return nil, ErrAccountNotFound
+	}
+
+	return account, nil
+}
+
+func (s *Service) FindAccountPosByID(accountID int64) (acc *types.Account, position int, err error) {
 	var account *types.Account
 	for pos, acc := range s.accounts {
 		if acc.ID == accountID {
@@ -120,7 +136,18 @@ func (s *Service) FindAccountByID(accountID int64) (acc *types.Account, position
 	return account, position, nil
 }
 
-func (s *Service) FindPaymentByID(paymentID string) (pay *types.Payment, position int, err error) {
+
+
+func (s *Service) FindPaymentByID(paymentID string) (*types.Payment, error) {
+	for _, payment := range s.payments {
+		if payment.ID == paymentID {
+			return payment, nil
+		}
+	}
+	return nil, ErrPaymentNotFound
+}
+
+func (s *Service) FindPaymentPosByID(paymentID string) (pay *types.Payment, position int, err error) {
 	for pos, payment := range s.payments {
 		if payment.ID == paymentID {
 			position = pos
@@ -131,7 +158,7 @@ func (s *Service) FindPaymentByID(paymentID string) (pay *types.Payment, positio
 }
 
 func (s *Service) Reject(paymentID string) error {
-	payment, _, err := s.FindPaymentByID(paymentID)
+	payment, err := s.FindPaymentByID(paymentID)
 	if err != nil {
 		return err
 	}
@@ -140,7 +167,7 @@ func (s *Service) Reject(paymentID string) error {
 		return ErrPaymentExecuted
 	}
 
-	account, _, err := s.FindAccountByID(payment.AccountID)
+	account, err := s.FindAccountByID(payment.AccountID)
 	if err != nil {
 		return err
 	}
@@ -151,7 +178,7 @@ func (s *Service) Reject(paymentID string) error {
 }
 
 func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
-	payment, _, err := s.FindPaymentByID(paymentID)
+	payment, err := s.FindPaymentByID(paymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +192,7 @@ func (s *Service) Repeat(paymentID string) (*types.Payment, error) {
 }
 
 func (s *Service) FavoritePayment(paymentID string, name string) (*types.Favorite, error) {
-	payment, _, err := s.FindPaymentByID(paymentID)
+	payment, err := s.FindPaymentByID(paymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +209,16 @@ func (s *Service) FavoritePayment(paymentID string, name string) (*types.Favorit
 	return favorite, nil
 }
 
-func (s *Service) FindFavoriteByID(favoriteID string) (fav *types.Favorite, position int, err error) {
+func (s *Service) FindFavoriteByID(favoriteID string) (*types.Favorite, error) {
+	for _, favorite := range s.favorites {
+		if favorite.ID == favoriteID {
+			return favorite, nil
+		}
+	}
+	return nil, ErrFavoriteNotFound
+}
+
+func (s *Service) FindFavoritePosByID(favoriteID string) (fav *types.Favorite, position int, err error) {
 	for pos, favorite := range s.favorites {
 		if favorite.ID == favoriteID {
 			position = pos
@@ -193,7 +229,7 @@ func (s *Service) FindFavoriteByID(favoriteID string) (fav *types.Favorite, posi
 }
 
 func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
-	favorite, _, err := s.FindFavoriteByID(favoriteID)
+	favorite, err := s.FindFavoriteByID(favoriteID)
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +475,7 @@ func (s *Service) Import(dir string) error {
 		}
 	}()
 
-	if err == nil {
+	if file != nil {
 		content := make([]byte, 0)
 		buf := make([]byte, 4)
 		for {
@@ -463,7 +499,7 @@ func (s *Service) Import(dir string) error {
 			id, _ := strconv.ParseInt(cols[0], 10, 64)
 			phone := types.Phone(cols[1])
 			balance, _ := strconv.ParseInt(cols[2], 10, 64)
-			oldAccount, position, err := s.FindAccountByID(id)
+			oldAccount, position, err := s.FindAccountPosByID(id)
 			if err != nil {
 				return err
 			}
@@ -496,7 +532,7 @@ func (s *Service) Import(dir string) error {
 		}
 	}()
 
-	if err == nil {
+	if file != nil {
 		content := make([]byte, 0)
 		buf := make([]byte, 4)
 		for {
@@ -521,7 +557,7 @@ func (s *Service) Import(dir string) error {
 			amount, _ := strconv.ParseInt(cols[2], 10, 64)
 			category := types.PaymentCategory(cols[3])
 			status := types.PaymentStatus(cols[4])
-			oldPayment, position, err := s.FindPaymentByID(id)
+			oldPayment, position, err := s.FindPaymentPosByID(id)
 			if err != nil {
 				return err
 			}
@@ -554,7 +590,7 @@ func (s *Service) Import(dir string) error {
 		}
 	}()
 
-	if err == nil {
+	if file != nil {
 		content := make([]byte, 0)
 		buf := make([]byte, 4)
 		for {
@@ -580,7 +616,7 @@ func (s *Service) Import(dir string) error {
 			amount, _ := strconv.ParseInt(cols[3], 10, 64)
 			category := types.PaymentCategory(cols[4])
 			
-			oldFavorite, position, err := s.FindFavoriteByID(id)
+			oldFavorite, position, err := s.FindFavoritePosByID(id)
 			if err != nil {
 				return err
 			}

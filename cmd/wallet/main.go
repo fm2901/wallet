@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"github.com/fm2901/wallet/pkg/wallet"
 )
 
@@ -28,6 +29,12 @@ func main() {
 
 	svc.Export("C:/homework/dz17/wallet/data")
 	svc.Import("C:/homework/dz17/wallet/data")
+
+	file, err := os.Open("C:/homework/dz17/wallet/data/favorites.dump")
+	if file == nil {
+		fmt.Println("file is nill")
+	}
+	fmt.Println(file)
 	//svc.ImportFromFile("C:/homework/dz16/wallet/data/accounts.dump")
 
 	//	wallet.CopyFile("C:/homework/dz17/wallet/data/accounts.dump", "C:/homework/dz17/wallet/data/accounts_copy.dump")
