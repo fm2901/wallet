@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/fm2901/wallet/pkg/wallet"
 )
-
 
 func main() {
 	svc := &wallet.Service{}
@@ -27,4 +27,6 @@ func main() {
 	fmt.Println(account.Balance)
 	svc.Pay(account.ID, 50, "auto")
 	fmt.Println(account.Balance)
+
+	svc.ExportToFile("C:/homework/dz16/wallet/data/accounts.dump")
 }

@@ -2,6 +2,9 @@ package wallet
 
 import (
 	"errors"
+	"log"
+	"os"
+	"strconv"
 
 	"github.com/fm2901/wallet/pkg/types"
 	"github.com/google/uuid"
@@ -14,6 +17,9 @@ var ErrNotEnoughBalance = errors.New("balance not enough")
 var ErrPaymentNotFound = errors.New("payment not found")
 var ErrPaymentExecuted = errors.New("payment already executed")
 var ErrFavoriteNotFound = errors.New("favorite not found")
+
+var ColDelimiter = ";"
+var RowDelimiter = "/n"
 
 type Service struct {
 	nextAccountID int64
@@ -160,11 +166,11 @@ func (s *Service) FavoritePayment(paymentID string, name string) (*types.Favorit
 
 	favoriteID := uuid.New().String()
 	favorite := &types.Favorite{
-		ID: favoriteID,
+		ID:        favoriteID,
 		AccountID: payment.AccountID,
-		Name: name,
-		Amount: payment.Amount,
-		Category: payment.Category,
+		Name:      name,
+		Amount:    payment.Amount,
+		Category:  payment.Category,
 	}
 	s.favorites = append(s.favorites, favorite)
 	return favorite, nil
@@ -184,11 +190,42 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	if err != nil {
 		return nil, err
 	}
-	
-	payment, err := s.Pay(favorite.AccountID,favorite.Amount,favorite.Category)
+
+	payment, err := s.Pay(favorite.AccountID, favorite.Amount, favorite.Category)
 	if err != nil {
 		return nil, err
 	}
 
 	return payment, nil
+}
+
+func (s *Service) ExportToFile(path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			log.Print(cerr)
+		}
+	}()
+
+	accountsStr := ""
+	for _, account := range s.accounts {
+		id := strconv.Itoa(int(account.ID))
+		phone := string(account.Phone)
+		balance := strconv.Itoa(int(account.Balance))
+		accountsStr += id + ColDelimiter + phone + ColDelimiter + balance + RowDelimiter
+	}
+	accountsStr = accountsStr[:len(accountsStr)-len(RowDelimiter)]
+
+	_, err = file.Write([]byte(accountsStr))
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	return nil
 }
